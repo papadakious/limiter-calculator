@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0066cc">
+  <link rel="manifest" href="manifest.json">
+  <title>Limiter Calculator</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0.8rem;
+      max-width: 1200px;
+      margin: 0.8rem auto;
+      background: #f9f9f9;
+      color: #222;
+      font-size: 15px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 0.6rem 0 1rem;
+      text-align: center;
+      color: #0066cc;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+    }
+    .left-column, .right-column {
+      flex: 1;
+      min-width: 300px;
+    }
+    .right-column {
+      background: #f0f8ff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .tab {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 0.8rem;
+      background: white;
+    }
+    .tab button {
+      flex: 1;
+      padding: 0.6rem;
+      border: none;
+      background: #f0f0f0;
+      cursor: pointer;
+      font-weight: 600;
+      color: #0066cc;
+      font-size: 0.95rem;
+    }
+    .tab button.active {
+      background: #0066cc;
+      color: white;
+    }
+    .tabcontent {
+      display: none;
+      background: white;
+      padding: 0.9rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+    }
+    .tabcontent.active {
+      display: block;
+    }
+    label {
+      display: block;
+      margin: 0.7rem 0 0.25rem;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 0.95rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    #custom-imp {
+      display: none;
+      margin-top: 0.3rem;
+    }
+    .note, .warning {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 0.25rem;
+      line-height: 1.3;
+    }
+    .warning {
+      color: #c62828;
+      background: #ffebee;
+      padding: 0.5rem;
+      border-radius: 5px;
+      margin: 0.8rem 0;
+    }
+    .option {
+      margin: 1rem 0;
+      padding: 0.9rem;
+      background: #f0f8ff;
+      border-radius: 6px;
+    }
+    .calc-wrapper {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      padding: 0.8rem 0 0.4rem;
+      margin: 0.8rem -0.9rem -0.9rem;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+      z-index: 10;
+    }
+    button.calc {
+      padding: 0.75rem;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.02rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    #result h3 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      color: #004080;
+    }
+    #result p, #convert-result p {
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+    }
+    #result strong {
+      color: #0066cc;
+    }
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+      .right-column { order: 3; }
+      .calc-wrapper { position: static; margin: 1rem -0.9rem -0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Loudspeaker Limiter Calculator</h1>
+
+<div class="container">
+  <div class="left-column">
+
+    <div class="tab">
+      <button class="tablinks active" onclick="openTab(event, 'Inputs')">1. Inputs</button>
+      <button class="tablinks" onclick="openTab(event, 'Converter')">2. Converter</button>
+      <button class="tablinks" onclick="openTab(event, 'About')">3. Crest Factor Info</button>
+    </div>
+
+    <div id="Inputs" class="tabcontent active">
+      <label>Speaker AES/RMS Power (W):</label>
+      <input type="number" id="power" value="400" min="10" step="10">
+
+      <label>Impedance (Ω):</label>
+      <select id="impedance" onchange="toggleCustom()">
+        <option value="2">2 Ω</option>
+        <option value="4">4 Ω</option>
+        <option value="6">6 Ω</option>
+        <option value="8" selected>8 Ω</option>
+        <option value="custom">Custom</option>
+      </select>
+      <input type="number" id="custom-imp" placeholder="Custom Ω" min="1" step="0.1">
+
+      <label>Safety Margin (dB):</label>
+      <input type="number" id="margin" value="-2" step="0.1">
+      <div class="note">Usually –1 to –3 dB</div>
+
+      <label>Amp Voltage Gain (dB):</label>
+      <input type="number" id="amp-gain" placeholder="e.g. 32, 38, 40" step="0.1">
+      <div class="note">Leave blank for absolute values only</div>
+
+      <label>Peak Crest Factor:</label>
+      <select id="crest-factor">
+        <option value="3">3 dB – sine wave</option>
+        <option value="6" selected>6 dB – typical music / classic AES</option>
+        <option value="12">12 dB – AES2-2012 / high-crest</option>
+      </select>
+      <div class="note">Default 6 dB = 4× RMS power (most common rating)</div>
+
+      <div class="calc-wrapper">
+        <button class="calc" onclick="calculateLimiter()">Calculate Limiter Settings</button>
+      </div>
+    </div>
+
+    <div id="Converter" class="tabcontent">
+      <label>Volts (RMS):</label>
+      <input type="number" id="volts-in" placeholder="e.g. 56.6" step="0.01">
+
+      <label>dBu:</label>
+      <input type="number" id="dbu-in" placeholder="e.g. +27.0" step="0.1">
+
+      <label>dBV:</label>
+      <input type="number" id="dbv-in" placeholder="e.g. +24.0" step="0.1">
+
+      <button class="calc" onclick="convertAll()">Convert</button>
+
+      <div id="convert-result">
+        <p>Enter one value — others will clear automatically.</p>
+      </div>
+    </div>
+
+    <div id="About" class="tabcontent">
+      <h2>Crest Factor for Peak Limiting</h2>
+      <p>Crest factor = peak / RMS ratio in dB. It sets how high peaks can go above the continuous (AES/RMS) rating.</p>
+
+      <div class="option">
+        <h3>3 dB – Sine wave / pure tone</h3>
+        <p>Peak = RMS × √2 (≈1.414×)<br>Peak power = 2× RMS<br>For test tones, not music.</p>
+      </div>
+
+      <div class="option">
+        <h3>6 dB – Classic AES / typical music</h3>
+        <p>Peak = RMS × 2<br>Peak power = 4× RMS<br>Matches most manufacturer specs (JBL, QSC, etc.). Recommended default.</p>
+      </div>
+
+      <div class="option">
+        <h3>12 dB – AES2-2012 / high-crest music</h3>
+        <p>Peak = RMS × 4<br>Peak power = 16× RMS<br><span class="warning">Warning:</span> Excessively high for most speakers — manufacturers usually rate peak as 2× (sine) or 4× RMS. Could allow damaging peaks. Use only if datasheet confirms AES2-2012 testing.</p>
+      </div>
+
+      <p><strong>Tip:</strong> Use 6 dB unless datasheet specifies otherwise. Verify with pink noise test.</p>
+    </div>
+
+  </div>
+
+  <div class="right-column">
+    <div id="result">
+      <h3>Results will appear here</h3>
+      <p>Fill inputs and click Calculate.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const REF_DBU = 0.775;
+  const REF_DBV = 1.0;
+
+  const convInputIds = ['volts-in', 'dbu-in', 'dbv-in'];
+
+  function clearOtherConvInputs(currentId) {
+    convInputIds.forEach(id => {
+      if (id !== currentId) document.getElementById(id).value = '';
+    });
+    document.getElementById('convert-result').innerHTML = '<p>Conversion result will appear here</p>';
+  }
+
+  function handleConvChange(id) {
+    clearOtherConvInputs(id);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    convInputIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', () => handleConvChange(id));
+        el.addEventListener('change', () => handleConvChange(id));
+      }
+    });
+  });
+
+  function openTab(evt, tabName) {
+    document.querySelectorAll('.tabcontent').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tablinks').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.classList.add('active');
+  }
+
+  function toggleCustom() {
+    document.getElementById('custom-imp').style.display =
+      document.getElementById('impedance').value === 'custom' ? 'block' : 'none';
+  }
+
+  function getImpedance() {
+    const sel = document.getElementById('impedance').value;
+    return sel === 'custom'
+      ? parseFloat(document.getElementById('custom-imp').value) || NaN
+      : parseFloat(sel);
+  }
+
+  function calculateLimiter() {
+    const P = parseFloat(document.getElementById('power').value);
+    const Z = getImpedance();
+    const marginDB = parseFloat(document.getElementById('margin').value) || 0;
+    const gainDB = parseFloat(document.getElementById('amp-gain').value);
+    const crestDB = parseFloat(document.getElementById('crest-factor').value);
+
+    if (isNaN(P) || isNaN(Z) || P <= 0 || Z <= 0) {
+      document.getElementById('result').innerHTML = "<p style='color:red'>Please enter valid power and impedance.</p>";
+      return;
+    }
+
+    const vRMSMax = Math.sqrt(P * Z);
+    const vRMS = vRMSMax * Math.pow(10, marginDB / 20);
+
+    const crestMultiplier = Math.pow(10, crestDB / 20);
+    const vPeak = vRMS * crestMultiplier;
+
+    const dBuRMS = 20 * Math.log10(vRMS / REF_DBU);
+    const dBuPeak = 20 * Math.log10(vPeak / REF_DBU);
+
+    let html = `<h3>Results (margin: ${marginDB} dB, crest: ${crestDB} dB)</h3>
+      <p>Max theoretical RMS: <strong>${vRMSMax.toFixed(2)} V</strong></p>
+      <p><strong>Safe RMS:</strong> <strong style="font-size:1.2em">${vRMS.toFixed(2)} V</strong></p>
+      <p><strong>Safe Peak:</strong> <strong style="font-size:1.2em">${vPeak.toFixed(2)} V</strong></p>
+      <p>Absolute RMS: <strong>${dBuRMS.toFixed(2)} dBu</strong></p>
+      <p>Absolute Peak: <strong>${dBuPeak.toFixed(2)} dBu</strong></p>`;
+
+    if (!isNaN(gainDB)) {
+      const relRMS = dBuRMS - gainDB;
+      const relPeak = dBuPeak - gainDB;
+      html += `<h4>Relative DSP thresholds (gain: ${gainDB} dB)</h4>
+        <p><strong>RMS limiter:</strong> <strong style="font-size:1.2em">${relRMS.toFixed(2)} dBu</strong></p>
+        <p><strong>Peak limiter:</strong> <strong style="font-size:1.2em">${relPeak.toFixed(2)} dBu</strong></p>
+        <div class="note">Set in DSP output (amp at full gain).</div>`;
+    } else {
+      html += `<div class="note">No amp gain → absolute values only.</div>`;
+    }
+
+    if (crestDB === 12) {
+      html += `<div class="warning">Warning: 12 dB allows excessively high peaks (16× RMS) vs most manufacturer ratings (2-4× RMS). Could damage speakers — use only if datasheet confirms AES2-2012 testing.</div>`;
+    }
+
+    html += `<div class="note" style="margin-top:0.8rem;">Verify with manufacturer specs.</div>`;
+
+    document.getElementById('result').innerHTML = html;
+  }
+
+  function convertAll() {
+    const v = parseFloat(document.getElementById('volts-in').value);
+    const dbu = parseFloat(document.getElementById('dbu-in').value);
+    const dbv = parseFloat(document.getElementById('dbv-in').value);
+
+    let out = '';
+
+    if (!isNaN(v)) {
+      out += `<p><strong>Volts → dBu:</strong> ${20 * Math.log10(v / REF_DBU).toFixed(2)} dBu<br>
+              <strong>→ dBV:</strong> ${20 * Math.log10(v / REF_DBV).toFixed(2)} dBV</p>`;
+    }
+    if (!isNaN(dbu)) {
+      const calcV = REF_DBU * Math.pow(10, dbu / 20);
+      out += `<p><strong>dBu → Volts:</strong> ${calcV.toFixed(3)} V<br>
+              <strong>→ dBV:</strong> ${20 * Math.log10(calcV / REF_DBV).toFixed(2)} dBV</p>`;
+    }
+    if (!isNaN(dbv)) {
+      const calcV = REF_DBV * Math.pow(10, dbv / 20);
+      out += `<p><strong>dBV → Volts:</strong> ${calcV.toFixed(3)} V<br>
+              <strong>→ dBu:</strong> ${20 * Math.log10(calcV / REF_DBU).toFixed(2)} dBu</p>`;
+    }
+
+    document.getElementById('convert-result').innerHTML =
+      out || "<p style='color:red'>Enter at least one value.</p>";
+  }
+
+  // PWA Service Worker registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker failed:', err));
+    });
+  }
+</script>
+
+</body>
+</html>
